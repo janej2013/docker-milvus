@@ -1,6 +1,4 @@
-# FROM soulteary/milvus:base-ubuntu20.04-openblas0.3.9
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+FROM janej2013/milvus-base:ubuntu20.04-openblas0.3.21
 
 LABEL maintainer=soulteary@gmail.com
 
@@ -29,7 +27,7 @@ ARG GO_BINARY_BASE_URL=https://golang.google.cn/dl/
 ENV GO_BINARY_BASE_URL=${GO_BINARY_BASE_URL}
 ENV GVM_ROOT=/root/.gvm
 # keep same version with milvus builder images: milvus/build/docker/builder/cpu/ubuntu18.04/Dockerfile
-ARG GOLANG_VERSION=1.16.9
+ARG GOLANG_VERSION=1.18
 ENV GOLANG_VERSION=${GOLANG_VERSION}
 RUN source /root/.gvm/scripts/gvm && \
     gvm install go${GOLANG_VERSION} -B && \
@@ -53,11 +51,11 @@ ENV MILVUS_GIT_BRANCH=${MILVUS_GIT_BRANCH}
 ARG MILVUS_GIT_CLONE_DEPTH=
 ENV MILVUS_GIT_CLONE_DEPTH=${MILVUS_GIT_CLONE_DEPTH}
 RUN if [ "$MILVUS_GIT_CLONE_DEPTH" = "" ];then \
-        bash -c "git clone ${MILVUS_GIT_REPO} --branch=${MILVUS_GIT_BRANCH}";\
+        bash -c "git clone ${MILVUS_GIT_REPO} --tag=v2.2.3";\
     else \
-        bash -c "git clone ${MILVUS_GIT_REPO} --branch=${MILVUS_GIT_BRANCH} --depth=${MILVUS_GIT_CLONE_DEPTH}"; \
+        bash -c "git clone ${MILVUS_GIT_REPO} --tag=v2.2.3 --depth=${MILVUS_GIT_CLONE_DEPTH}"; \
     fi
 
 
 WORKDIR /milvus
-RUN source /root/.gvm/scripts/gvm && make milvus mode=Debug
+RUN source /root/.gvm/scripts/gvm && make milvus

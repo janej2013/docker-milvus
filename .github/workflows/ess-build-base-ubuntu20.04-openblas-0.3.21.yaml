@@ -1,0 +1,61 @@
+name: Base Image (Ubuntu 20.04 + OpenBLAS 0.3.20)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main-pause'
+    tags:
+      - 'base*'
+    paths:
+      - 'docker/base/Dockerfile'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: base
+        uses: docker/build-push-action@v3
+        with:
+          file: docker/base/Dockerfile
+          context: .
+          build-args: OPENBLAS=0.3.21
+          platforms: linux/arm64
+          push: true
+          tags: janej2013/milvus-base:ubuntu20.04-openblas0.3.21
+      -
+        name: builder
+        uses: docker/build-push-action@v3
+        with:
+          file: docker/builder/Dockerfile
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: janej2013/milvus:builder-ubuntu20.04-openblas0.3.21-golang1.18
+      -
+        name: app
+        uses: docker/build-push-action@v3
+        with:
+          file: docker/app/Dockerfile
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: janej2013/milvus-ess:v2.2.3
