@@ -1,14 +1,7 @@
-name: Base Image (Ubuntu 20.04 + OpenBLAS 0.3.20)
+name: ESS
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - 'main-pause'
-    tags:
-      - 'base*'
-    paths:
-      - 'docker/base/Dockerfile'
 
 jobs:
   build:
