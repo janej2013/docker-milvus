@@ -3,6 +3,17 @@ FROM ubuntu:20.04
 
 COPY --from=openblas /usr/lib/libopenblas-r0.3.20.so /usr/lib/
 
+ENV DEBIAN_FRONTEND noninteractive
+
+# deps
+RUN apt-get update && \
+    # common utils for download sources tarball/zipball
+    apt-get install -y --no-install-recommends curl wget ca-certificates gnupg2 && \
+    # openblas deps
+    apt-get install -y --no-install-recommends g++ gcc gfortran git make && \
+    # cleanup
+    apt-get remove --purge -y && rm -rf /var/lib/apt/lists/*
+
 LABEL maintainer=soulteary@gmail.com
 
 # build cmake 3.16.3+ from source https://cmake.org
