@@ -1,4 +1,7 @@
-FROM soulteary/milvus-openblas:0.3.20-armv8-ubuntu-20.04
+FROM soulteary/milvus-openblas:0.3.20-armv8-ubuntu-20.04 as openblas
+FROM ubuntu:20.04
+
+COPY --from=openblas /usr/lib/libopenblas-r0.3.20.so /usr/lib/
 
 LABEL maintainer=soulteary@gmail.com
 
