@@ -24,16 +24,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-      -
-        name: base
-        uses: docker/build-push-action@v3
-        with:
-          file: docker/base/Dockerfile
-          context: .
-          build-args: OPENBLAS=0.3.21
-          platforms: linux/arm64
-          push: true
-          tags: janej2013/milvus-base:ubuntu20.04-openblas0.3.21
+
       -
         name: builder
         uses: docker/build-push-action@v3
@@ -42,7 +33,7 @@ jobs:
           context: .
           platforms: linux/arm64
           push: true
-          tags: janej2013/milvus:builder-ubuntu20.04-openblas0.3.21-golang1.18
+          tags: janej2013/milvus:builder-ubuntu20.04-openblas0.3.20-golang1.18
       -
         name: app
         uses: docker/build-push-action@v3
