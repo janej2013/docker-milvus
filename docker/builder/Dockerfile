@@ -1,4 +1,4 @@
-FROM soulteary/milvus-openblas:0.3.20-armv8-ubuntu-22.04
+FROM soulteary/milvus-openblas:0.3.20-armv8-ubuntu-20.04
 
 LABEL maintainer=soulteary@gmail.com
 
