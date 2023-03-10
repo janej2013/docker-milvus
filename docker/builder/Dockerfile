@@ -17,8 +17,8 @@ RUN apt-get update && \
 LABEL maintainer=soulteary@gmail.com
 
 # build cmake 3.16.3+ from source https://cmake.org
-ENV DOCKER_CMAKE_TARBALL=https://cmake.org/files/v3.18/cmake-3.18.6-Linux-x86_64.tar.gz
-RUN wget -qO- "${DOCKER_CMAKE_TARBALL}" | tar --strip-components=1 -xz -C /usr/local
+ENV DOCKER_CMAKE_TARBALL=https://cmake.org/files/v3.18/cmake-3.18.6.tar.gz
+RUN wget -qO- "${DOCKER_CMAKE_TARBALL}" | tar -xz 
 
 # install linux build deps (from milvus/scripts/install_deps.sh)
 RUN apt update && \
@@ -65,9 +65,9 @@ ENV MILVUS_GIT_BRANCH=${MILVUS_GIT_BRANCH}
 ARG MILVUS_GIT_CLONE_DEPTH=
 ENV MILVUS_GIT_CLONE_DEPTH=${MILVUS_GIT_CLONE_DEPTH}
 RUN if [ "$MILVUS_GIT_CLONE_DEPTH" = "" ];then \
-        bash -c "git clone ${MILVUS_GIT_REPO} --tag=v2.2.3";\
+        bash -c "git clone ${MILVUS_GIT_REPO} --branch=v2.2.3";\
     else \
-        bash -c "git clone ${MILVUS_GIT_REPO} --tag=v2.2.3 --depth=${MILVUS_GIT_CLONE_DEPTH}"; \
+        bash -c "git clone ${MILVUS_GIT_REPO} --branch=v2.2.3 --depth=${MILVUS_GIT_CLONE_DEPTH}"; \
     fi
 
 
