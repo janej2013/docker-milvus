@@ -1,4 +1,4 @@
-FROM janej2013/milvus:builder-ubuntu20.04-openblas0.3.21-golang1.18 AS builder
+FROM janej2013/milvus:builder-ubuntu20.04-openblas0.3.20-golang1.18 AS builder
 
 FROM ubuntu:20.04
 LABEL maintainer=soulteary@gmail.com
@@ -13,8 +13,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # copy openblas dependencies from base image
-COPY --from=builder /usr/lib/libopenblas-r0.3.21.so /usr/lib/
-RUN ln -s /usr/lib/libopenblas-r0.3.21.so /usr/lib/libopenblas.so.0 && \
+COPY --from=builder /usr/lib/libopenblas-r0.3.20.so /usr/lib/
+RUN ln -s /usr/lib/libopenblas-r0.3.20.so /usr/lib/libopenblas.so.0 && \
     ln -s /usr/lib/libopenblas.so.0 /usr/lib/libopenblas.so
 
 # get milvus build results and dependencies from the milvus tool image
