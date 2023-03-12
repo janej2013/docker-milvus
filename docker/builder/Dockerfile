@@ -1,12 +1,10 @@
-FROM soulteary/milvus-openblas:0.3.20-armv8-ubuntu-20.04 as base
+FROM soulteary/milvus:base-ubuntu20.04-openblas0.3.9 as base
 FROM ubuntu:20.04
 
-# COPY --from=base /usr/lib/libopenblas-r0.3.20.so /usr/lib/
-COPY --from=base /usr/lib/libopenblas-r0.3.20.so /usr/lib/
-RUN ls -l /usr/lib/libopenblas-r0.3.20.so
-RUN ln -s /usr/lib/libopenblas-r0.3.20.so /usr/lib/libopenblas.so.0 && \
+COPY --from=base /usr/lib/libopenblas-r0.3.9.so /usr/lib/
+RUN ls -l /usr/lib/libopenblas-r0.3.9.so
+RUN ln -s /usr/lib/libopenblas-r0.3.9.so /usr/lib/libopenblas.so.0 && \
     ln -s /usr/lib/libopenblas.so.0 /usr/lib/libopenblas.so
-RUN ls -l /usr/lib/libopenblas.so
 
 ENV DEBIAN_FRONTEND noninteractive
 
