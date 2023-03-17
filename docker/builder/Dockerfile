@@ -1,78 +1,37 @@
-FROM soulteary/milvus:base-ubuntu20.04-openblas0.3.9 as base
 FROM ubuntu:20.04
-
-COPY --from=base /usr/lib/libopenblas-r0.3.9.so /usr/lib/
-RUN ls -l /usr/lib/libopenblas-r0.3.9.so
-RUN ln -s /usr/lib/libopenblas-r0.3.9.so /usr/lib/libopenblas.so.0 && \
-    ln -s /usr/lib/libopenblas.so.0 /usr/lib/libopenblas.so
 
 ENV DEBIAN_FRONTEND noninteractive
 
-# deps
 RUN apt-get update && \
-    # common utils for download sources tarball/zipball
-    apt-get install -y --no-install-recommends curl wget ca-certificates gnupg2 && \
-    # openblas deps
-    apt-get install -y --no-install-recommends g++ gcc gfortran git make && \
-    # cleanup
-    apt-get remove --purge -y && rm -rf /var/lib/apt/lists/*
+    apt-get install -y tzdata && \
+    apt install -y g++ gcc make git wget pkg-config python3-dev python3-pip && \
+    python3 -m pip install conan==1.58.0
 
-LABEL maintainer=soulteary@gmail.com
-
-# build cmake 3.16.3+ from source https://cmake.org
-ENV DOCKER_CMAKE_TARBALL=https://cmake.org/files/v3.19/cmake-3.19.3-Linux-aarch64.tar.gz
-RUN wget -qO- "${DOCKER_CMAKE_TARBALL}" | tar --strip-components=1 -xz -C /usr/local
-
-# install linux build deps (from milvus/scripts/install_deps.sh)
-RUN apt update && \
-    apt-get install -y g++ gcc make lcov libtool m4 autoconf automake ccache libssl-dev zlib1g-dev libboost-regex-dev libboost-program-options-dev libboost-system-dev libboost-filesystem-dev libboost-serialization-dev python3-dev libboost-python-dev libcurl4-openssl-dev gfortran libtbb-dev \
-    # install extra deps `clang-format-10 clang-tidy-10` (from milvus/build/docker/builder/cpu/ubuntu20.04/Dockerfile)
-    clang-format-10 clang-tidy-10 \
-    # install extra deps for golang installer
-    bison && \
-    # cleanup
-    apt-get remove --purge -y && rm -rf /var/lib/apt/lists/*
-
-# change default shell for build milvus
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# use gvm improved version, can support golang fast installation for x86 / arm platform
-# maybe the milvus community can fork a version to provide a more stable service
-# ref: https://soulteary.com/2021/12/15/golang-multi-version-management.html / https://soulteary.com/2022/05/12/better-golang-usage-on-m1-mac.html
-RUN curl -sSL https://github.com/soulteary/gvm/raw/master/binscripts/gvm-installer | bash
-ARG GO_BINARY_BASE_URL=https://golang.google.cn/dl/
-ENV GO_BINARY_BASE_URL=${GO_BINARY_BASE_URL}
-ENV GVM_ROOT=/root/.gvm
-# keep same version with milvus builder images: milvus/build/docker/builder/cpu/ubuntu18.04/Dockerfile
-ARG GOLANG_VERSION=1.18
-ENV GOLANG_VERSION=${GOLANG_VERSION}
-RUN source /root/.gvm/scripts/gvm && \
-    gvm install go${GOLANG_VERSION} -B && \
-    gvm use go${GOLANG_VERSION} --default
-# after go1.15+, need set `GOROOT_BOOTSTRAP` for golang
-ENV GOROOT_BOOTSTRAP=/root/.gvm
-ENV GO111MODULE=on
-ENV GOPATH="$HOME/go"
-ENV PATH="$GOPATH/bin:$PATH"
-ARG GOPROXY_URL=https://proxy.golang.org
-ENV GOPROXY="${GOPROXY_URL},direct"
+RUN wget https://go.dev/dl/go1.20.2.linux-arm64.tar.gz && \
+    tar --strip-components=1 -xvf go1.20.2.linux-arm64.tar.gz  -C /usr/local && \
+    echo "PATH=$PATH:/usr/local/go/bin" >> /etc/bash.bashrc
 
+RUN wget https://cmake.org/files/v3.24/cmake-3.24.3-linux-aarch64.tar.gz && \
+    tar --strip-components=1 -xvf cmake-3.24.3-linux-aarch64.tar.gz  -C /usr/local
 
+RUN wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.21/OpenBLAS-0.3.21.tar.gz && \
+    tar xvf OpenBLAS-0.3.21.tar.gz && \
+    cd OpenBLAS-0.3.21 && cmake -B build && cd build && make -j && make install && \
+    mkdir -p OpenBLAS-0.3.21/build && cd OpenBLAS-0.3.21/build && cmake ../ && make -j && make install && cd -
 
-# download milvus source from github
-# allow user specify a milvus git repository, branch, clone depth
-ARG MILVUS_GIT_REPO=https://github.com/milvus-io/milvus.git
-ENV MILVUS_GIT_REPO=${MILVUS_GIT_REPO}
-ARG MILVUS_GIT_BRANCH=master
-ENV MILVUS_GIT_BRANCH=${MILVUS_GIT_BRANCH}
-ARG MILVUS_GIT_CLONE_DEPTH=
-ENV MILVUS_GIT_CLONE_DEPTH=${MILVUS_GIT_CLONE_DEPTH}
-RUN if [ "$MILVUS_GIT_CLONE_DEPTH" = "" ];then \
-        bash -c "git clone ${MILVUS_GIT_REPO} --branch=v2.2.3";\
-    else \
-        bash -c "git clone ${MILVUS_GIT_REPO} --branch=v2.2.3 --depth=${MILVUS_GIT_CLONE_DEPTH}"; \
-    fi
+RUN wget https://github.com/confluentinc/librdkafka/archive/refs/tags/v2.0.2.tar.gz && \
+    tar xvf v2.0.2.tar.gz && \
+    mkdir -p librdkafka-2.0.2/build && cd librdkafka-2.0.2/build &&cmake ../ && make -j && make install && cd -
 
+RUN git clone https://github.com/milvus-io/milvus.git && \
+    cd milvus && git checkout 9950cacd102d1518833bfc55251f1e05343bdc17 && \
+    sed -i 's/github.com\/confluentinc\/confluent-kafka-go\/kafka/github.com\/confluentinc\/confluent-kafka-go\/v2\/kafka/g' $(find -name *.go) && \
+    sed -i 's/github.com\/confluentinc\/confluent-kafka-go v1.9.1/github.com\/confluentinc\/confluent-kafka-go\/v2 v2.0.2/g' go.mod && \
+    sed -i '143a github.com\/confluentinc\/confluent-kafka-go\/v2 v2.0.2\/go.mod h1:qWGwym8EpAsIP5lZsTKhYTnYSGqkbxEfRB4A489Jo64=' go.sum && \
+    sed -i '143a github.com\/confluentinc\/confluent-kafka-go\/v2 v2.0.2 h1:YmUjjRp1mSTqTxtHQYMQKBLa2hfgIZz9PSqoSRDkwf4=' go.sum
 
-WORKDIR /milvus
-RUN source /root/.gvm/scripts/gvm && make milvus
+RUN make install
+
+WORKDIR /milvus/
