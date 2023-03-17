@@ -1,40 +1,24 @@
 FROM janej2013/milvus:builder-ubuntu20.04-openblas0.3.20-golang1.18 AS builder
-
 FROM ubuntu:20.04
-LABEL maintainer=soulteary@gmail.com
 
 # change default shell for milvus users
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # keep same version with milvus builder images: milvus/build/docker/milvus/ubuntu18.04/Dockerfile
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends libtbb-dev gfortran netcat iputils-ping ca-certificates && \
+    apt-get install -y --no-install-recommends libtbb-dev gfortran netcat iputils-ping ca-certificates libcurl4-openssl-dev && \
     apt-get remove --purge -y && \
     rm -rf /var/lib/apt/lists/*
 
-# copy openblas dependencies from base image
-COPY --from=builder /usr/lib/libopenblas-r0.3.20.so /usr/lib/
-RUN ln -s /usr/lib/libopenblas-r0.3.20.so /usr/lib/libopenblas.so.0 && \
-    ln -s /usr/lib/libopenblas.so.0 /usr/lib/libopenblas.so
-
-# get milvus build results and dependencies from the milvus tool image
-COPY --from=builder /milvus/bin/ /milvus/bin/
-COPY --from=builder /milvus/configs/*.yaml /milvus/configs/
-COPY --from=builder /milvus/internal/core/output/lib/ /milvus/lib/
-# COPY --from=builder /milvus/internal/core/output/lib/libmilvus_indexbuilder.so /milvus/lib/
-# COPY --from=builder /milvus/internal/core/output/lib/libmilvus_segcore.so /milvus/lib/
-# COPY --from=builder /milvus/internal/core/output/lib/libmilvus_common.so /milvus/lib/
-# COPY --from=builder /milvus/internal/core/output/lib/libmilvus_index.so /milvus/lib/
-# COPY --from=builder /milvus/internal/core/output/lib/libknowhere.so /milvus/lib/
-# COPY --from=builder /milvus/internal/core/output/lib/libmarisa.so.0 /milvus/lib/
+COPY --from=builder /milvus/bin /milvus/bin/
+COPY --from=builder /milvus/lib /milvus/lib/
 
 # set environment variables to ensure that the program can run normally
 ENV PATH=/milvus/bin:$PATH
 ENV LD_LIBRARY_PATH=/milvus/lib:$LD_LIBRARY_PATH:/usr/lib
 
-# use tini to avoid zombie processes
-ADD https://github.com/krallin/tini/releases/download/v0.19.0/tini /tini
-RUN chmod +x /tini
-ENTRYPOINT ["/tini", "--"]
+# set environment variables to ensure that the program can run normally
+ENV PATH=/milvus/bin:$PATH
+ENV LD_LIBRARY_PATH=/milvus/lib:$LD_LIBRARY_PATH:/usr/lib
 
 WORKDIR /milvus/
